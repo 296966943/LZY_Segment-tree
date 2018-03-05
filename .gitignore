@@ -1,32 +1,193 @@
-# Prerequisites
-*.d
+#include<iostream>
+#include<cstring>
+#include<cmath>
+#include<algorithm>
+#include<queue>
+#include<cstdio>
+#include<cstdlib>
+#include<string>
+using namespace std;
+struct ss
+{
+	int val;
+	int maxx,minn;
+	int addmark;
+	int chengmark;
+}tree[100000];
+int n,a[5000],fa[100000];
+void cc(int root,int rl,int rr)
+{
+	if(tree[root].addmark!=0)
+	{
+		tree[root*2].chengmark+=tree[root].chengmark;
+		tree[root*2+1].chengmark+=tree[root].chengmark;
+		
+		tree[root*2].addmark*=tree[root].chengmark;
+		tree[root*2+1].addmark*=tree[root].chengmark;
+		
+		tree[root*2].addmark+=tree[root].addmark;
+		tree[root*2+1].addmark+=tree[root].addmark;
+		
+		
+		tree[root*2].maxx+=tree[root].addmark;
+		tree[root*2+1].maxx+=tree[root].addmark;
+		tree[root*2].minn+=tree[root].addmark;
+		tree[root*2+1].minn+=tree[root].addmark;
+		
+		tree[root*2].maxx*=tree[root].chengmark;
+		tree[root*2+1].maxx*=tree[root].chengmark;
+		tree[root*2].minn*=tree[root].chengmark;
+		tree[root*2+1].minn*=tree[root].chengmark;
+		
+		int mid=(rl+rr)/2;
+		
+		tree[root*2].val+=(mid-rl+1)*tree[root].addmark;
+		tree[root*2+1].val+=(rr-mid)*tree[root].addmark;
+		tree[root].addmark=0;
+	}
+	//	cout<<rl<<' '<<rr<<endl;
+}
+int built(int root,int left,int right)
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+{
+	if(left==right)
+	{
+		tree[root].val=a[left];
+		tree[root].minn=a[left];
+		tree[root].maxx=a[left];
+		return 0;
+	}
+	int mid=(left+right)/2;
+	built(root*2,left,mid);
+	built(root*2+1,mid+1,right);
+	fa[root*2]=root;
+	fa[root*2+1]=root;
+		tree[root].val=tree[root*2].val+tree[root*2+1].val;
+		tree[root].minn=min(tree[root*2].minn,tree[root*2+1].minn);
+		tree[root].maxx=min(tree[root*2].maxx,tree[root*2+1].maxx);
+	return 0;
+	
+}
+int findval(int root,int rl,int rr,int left,int right)
+{
+	if(rl>=left&&rr<=right)
+		return tree[root].val;
+	if(rr<left||rl>right)
+		return 0;
+	int mid=(rl+rr)/2;
+	cc(root,rl,rr);
+	return findval(root*2,rl,mid,left,right)+findval(root*2+1,mid+1,rr,left,right);
+}
+int findmaxx(int root,int rl,int rr,int left,int right)
+{
+	if(rl>=left&&rr<=right)
+		return tree[root].maxx;
+	if(rr<left||rl>right)
+		return 0;
+	int mid=(rl+rr)/2;
+	cc(root,rl,rr);
+	return findmaxx(root*2,rl,mid,left,right)+findmaxx(root*2+1,mid+1,rr,left,right);
+}
+int pointadd(int root,int left,int right,int kl,int addval)
+{
+	if(left==right)
+	{
+		tree[root].maxx+=addval;
+		tree[root].minn+=addval;
+		tree[root].val+=addval;
+		return 0;
+	}
+	int mid=(left+right)/2;
+	if(kl>mid)
+		pointadd(root*2+1,mid+1,right,kl,addval);
+	else
+		pointadd(root*2,left,mid,kl,addval);
+	tree[root].maxx=max(tree[root*2].maxx,tree[root*2+1].maxx);
+	tree[root].minn=min(tree[root*2].minn,tree[root*2+1].minn);
+	tree[root].val+=addval;
+	return 0;
+}
+int lradd(int root,int l,int r,int left,int right,int addd)
+{
+	if(l>=left&&r<=right)
+	{
+		tree[root].addmark+=addd;
+		tree[root].maxx+=addd;
+		tree[root].minn+=addd;
+		tree[root].val+=(r-l+1)*addd;
+		for(int i=fa[root];i!=0;i=fa[i])
+		{
+			tree[i].maxx=max(tree[i*2].maxx,tree[i*2+1].maxx);
+			tree[i].minn=min(tree[i*2].minn,tree[i*2+1].minn);
+			tree[i].val+=(r-l+1)*addd;
+		}
+		//cout<<1<<endl;
+		return 0;
+	}
+	if(r<left||l>right)
+		return 0;
+	int mid=(l+r)/2;
+	lradd(root*2,l,mid,left,right,addd);
+	lradd(root*2+1,mid+1,r,left,right,addd);
+	return 0;
+}
+int lrc(int root,int l,int r,int left,int right,int addd)
+{
+	if(l>=left&&r<=right)
+	{
+		tree[root].chengmark+=addd;
+		tree[root].maxx*=addd;
+		tree[root].minn*=addd;
+		tree[root].val*=addd;
+		tree[root].addmark*=addd;
+		for(int i=fa[root];i!=0;i=fa[i])
+		{
+			tree[i].maxx=max(tree[i*2].maxx,tree[i*2+1].maxx);
+			tree[i].minn=min(tree[i*2].minn,tree[i*2+1].minn);
+			tree[i].val+=(r-l+1)*addd;
+		}
+		//cout<<1<<endl;
+		return 0;
+	}
+	if(r<left||l>right)
+		return 0;
+	int mid=(l+r)/2;
+	lradd(root*2,l,mid,left,right,addd);
+	lradd(root*2+1,mid+1,r,left,right,addd);
+	return 0;
+}
+int m1,m2,m3,m4,m5;
+int main()
+{
+	memset(tree,0,sizeof(tree));
+	cin>>n>>m1>>m2>>m3>>m4>>m5;
+	for(int i=1;i<=n;i++)
+		cin>>a[i];
+	built(1,1,n);
+	for(int i=1,x,y;i<=m2;i++)
+	{
+		cin>>x>>y;
+		cout<<findmaxx(1,1,n,x,y)<<endl;
+	}
+	for(int i=1,x,y;i<=m3;i++)
+	{
+		cin>>x>>y;
+		pointadd(1,1,n,x,y);
+	}
+	for(int i=1,x,y,z;i<=m4;i++)
+	{
+		cin>>x>>y>>z;
+		lradd(1,1,n,x,y,z);
+	}
+	for(int i=1,x,y,z;i<=m5;i++)
+	{
+		cin>>x>>y>>z;
+		lrc(1,1,n,x,y,z);
+	}
+	for(int i=1,x,y;i<=m1;i++)
+	{
+		cin>>x>>y;
+		cout<<findval(1,1,n,x,y)<<endl;
+	}
+	return 0;
+}
